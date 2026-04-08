@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # InvenTrack - Inventory Management System
 
 ## Setup Instructions
@@ -60,3 +61,6 @@ npm start       # Start React app on port 3000
 - Export inventory to CSV
 - Dark mode toggle
 - Responsive sidebar layout
+=======
+# Inventory-management-system
+>>>>>>> 12c47c49d1f3f3ef214f7c44aad8209730ebd9a3
