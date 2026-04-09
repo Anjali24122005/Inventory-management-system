@@ -7,6 +7,7 @@ import { AlertProvider } from './context/AlertContext';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import VerifyEmail from './pages/VerifyEmail';
 import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
 import ActivityLog from './pages/ActivityLog';
@@ -31,6 +32,7 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
             <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+            <Route path="/verify-email/:token" element={<VerifyEmail />} />
             <Route path="/" element={
               <PrivateRoute>
                 <AlertProvider>
