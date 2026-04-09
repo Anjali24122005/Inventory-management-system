@@ -7,7 +7,14 @@ dotenv.config();
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    process.env.FRONTEND_URL, // set this in Render env vars
+  ].filter(Boolean),
+  credentials: true,
+}));
+
 app.use(express.json());
 
 // Routes
