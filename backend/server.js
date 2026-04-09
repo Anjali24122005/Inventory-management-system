@@ -8,10 +8,19 @@ dotenv.config();
 const app = express();
 
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    process.env.FRONTEND_URL, // set this in Render env vars
-  ].filter(Boolean),
+  origin: function(origin, callback) {
+    const allowed = [
+      'http://localhost:3000',
+      process.env.FRONTEND_URL,
+      'https://inventory-management-system-iota-one.vercel.app',
+      'https://inventory-management-system-m5woeo3fw.vercel.app',
+    ].filter(Boolean);
+    if (!origin || allowed.includes(origin) || origin.endsWith('.vercel.app')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
 }));
 
