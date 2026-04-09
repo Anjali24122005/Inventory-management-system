@@ -44,7 +44,7 @@ export const AlertProvider = ({ children }) => {
 
   useEffect(() => {
     fetchLowStock();
-    const interval = setInterval(fetchLowStock, 60000); // re-check every 60s
+    const interval = setInterval(fetchLowStock, 300000); // re-check every 5 mins
     return () => clearInterval(interval);
   }, []);
 

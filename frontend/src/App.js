@@ -27,19 +27,23 @@ export default function App() {
     <ThemeProvider>
       <AuthProvider>
         <BrowserRouter>
-          <AlertProvider>
-            <Toaster position="top-right" />
-            <Routes>
-              <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
-              <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
-              <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
-                <Route index element={<Dashboard />} />
-                <Route path="products" element={<Products />} />
-                <Route path="activity" element={<ActivityLog />} />
-                <Route path="analytics" element={<Analytics />} />
-              </Route>
-            </Routes>
-          </AlertProvider>
+          <Toaster position="top-right" />
+          <Routes>
+            <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+            <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+            <Route path="/" element={
+              <PrivateRoute>
+                <AlertProvider>
+                  <Layout />
+                </AlertProvider>
+              </PrivateRoute>
+            }>
+              <Route index element={<Dashboard />} />
+              <Route path="products" element={<Products />} />
+              <Route path="activity" element={<ActivityLog />} />
+              <Route path="analytics" element={<Analytics />} />
+            </Route>
+          </Routes>
         </BrowserRouter>
       </AuthProvider>
     </ThemeProvider>
