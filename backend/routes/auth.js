@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const { protect } = require('../middleware/auth');
@@ -41,47 +40,46 @@ router.post('/register', [
     if (await User.findOne({ phone }))
       return res.status(400).json({ message: 'Phone number already registered' });
 
-    // Generate email verification token
-    const emailVerifyToken = crypto.randomBytes(32).toString('hex');
-    const emailVerifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
-
+    const emailOtp = generateOtp();
     const user = await User.create({
       name, email, password, phone, role,
-      emailVerifyToken,
-      emailVerifyExpires,
+      emailVerifyToken: emailOtp,
+      emailVerifyExpires: new Date(Date.now() + 10 * 60 * 1000), // 10 min
     });
 
-    // Send verification email
-    await sendVerificationEmail(email, emailVerifyToken);
+    // Send OTP email (non-blocking — don't await to avoid timeout)
+    sendVerificationEmail(email, emailOtp).catch(console.error);
 
     res.status(201).json({
-      message: 'Registration successful. Please verify your email.',
+      message: 'OTP sent to your email. Please verify.',
       userId: user._id,
       requiresEmailVerification: true,
     });
   } catch (err) { next(err); }
 });
 
-// ─── VERIFY EMAIL ─────────────────────────────────────────────────────────────
-router.get('/verify-email/:token', async (req, res, next) => {
+// ─── VERIFY EMAIL OTP ─────────────────────────────────────────────────────────
+router.post('/verify-email-otp', async (req, res, next) => {
   try {
+    const { email, otp } = req.body;
     const user = await User.findOne({
-      emailVerifyToken: req.params.token,
+      email,
+      emailVerifyToken: otp,
       emailVerifyExpires: { $gt: Date.now() },
     });
 
-    if (!user) return res.status(400).json({ message: 'Invalid or expired verification link' });
+    if (!user) return res.status(400).json({ message: 'Invalid or expired OTP' });
 
     user.isEmailVerified = true;
     user.emailVerifyToken = undefined;
     user.emailVerifyExpires = undefined;
     await user.save();
 
-    res.json({ message: 'Email verified successfully! You can now log in.' });
+    res.json({ message: 'Email verified successfully!' });
   } catch (err) { next(err); }
 });
 
-// ─── RESEND EMAIL VERIFICATION ────────────────────────────────────────────────
+// ─── RESEND EMAIL OTP ─────────────────────────────────────────────────────────
 router.post('/resend-verification', async (req, res, next) => {
   try {
     const { email } = req.body;
@@ -89,12 +87,13 @@ router.post('/resend-verification', async (req, res, next) => {
     if (!user) return res.status(404).json({ message: 'User not found' });
     if (user.isEmailVerified) return res.status(400).json({ message: 'Email already verified' });
 
-    user.emailVerifyToken = crypto.randomBytes(32).toString('hex');
-    user.emailVerifyExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const emailOtp = generateOtp();
+    user.emailVerifyToken = emailOtp;
+    user.emailVerifyExpires = new Date(Date.now() + 10 * 60 * 1000);
     await user.save();
 
-    await sendVerificationEmail(email, user.emailVerifyToken);
-    res.json({ message: 'Verification email resent' });
+    sendVerificationEmail(email, emailOtp).catch(console.error);
+    res.json({ message: 'OTP resent to your email' });
   } catch (err) { next(err); }
 });
 
@@ -109,11 +108,11 @@ router.post('/send-phone-otp', async (req, res, next) => {
 
     const otp = generateOtp();
     user.phoneOtp = otp;
-    user.phoneOtpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+    user.phoneOtpExpires = new Date(Date.now() + 10 * 60 * 1000);
     await user.save();
 
-    await sendPhoneOtp(phone, otp);
-    res.json({ message: 'OTP sent to your phone number' });
+    sendPhoneOtp(phone, otp).catch(console.error);
+    res.json({ message: 'OTP sent to your phone', simulated: !process.env.TWILIO_SID });
   } catch (err) { next(err); }
 });
 
@@ -138,7 +137,7 @@ router.post('/verify-phone-otp', async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// ─── LOGIN (Email + Password) ─────────────────────────────────────────────────
+// ─── LOGIN ────────────────────────────────────────────────────────────────────
 router.post('/login', [
   body('email').isEmail().withMessage('Valid email required'),
   body('password').notEmpty().withMessage('Password required'),
@@ -164,7 +163,7 @@ router.post('/login', [
   } catch (err) { next(err); }
 });
 
-// ─── LOGIN (Phone + OTP) ──────────────────────────────────────────────────────
+// ─── LOGIN PHONE OTP ──────────────────────────────────────────────────────────
 router.post('/login-phone', async (req, res, next) => {
   try {
     const { phone, otp } = req.body;
@@ -177,7 +176,6 @@ router.post('/login-phone', async (req, res, next) => {
     });
 
     if (!user) return res.status(401).json({ message: 'Invalid or expired OTP' });
-
     if (!user.isEmailVerified)
       return res.status(403).json({ message: 'Please verify your email first' });
 
@@ -193,28 +191,14 @@ router.post('/login-phone', async (req, res, next) => {
 // ─── GOOGLE AUTH ──────────────────────────────────────────────────────────────
 router.post('/google', async (req, res, next) => {
   try {
-    const { googleId, email, name, picture } = req.body;
+    const { googleId, email, name } = req.body;
     if (!googleId || !email) return res.status(400).json({ message: 'Google auth data missing' });
 
     let user = await User.findOne({ $or: [{ googleId }, { email }] });
-
     if (user) {
-      // Link Google if not already linked
-      if (!user.googleId) {
-        user.googleId = googleId;
-        user.authProvider = 'google';
-        user.isEmailVerified = true;
-        await user.save();
-      }
+      if (!user.googleId) { user.googleId = googleId; user.isEmailVerified = true; await user.save(); }
     } else {
-      user = await User.create({
-        name,
-        email,
-        googleId,
-        authProvider: 'google',
-        isEmailVerified: true,
-        isPhoneVerified: false,
-      });
+      user = await User.create({ name, email, googleId, authProvider: 'google', isEmailVerified: true });
     }
 
     res.json(userResponse(user, generateToken(user._id)));
