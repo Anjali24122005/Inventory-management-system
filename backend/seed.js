@@ -31,14 +31,20 @@ async function seed() {
     name: 'Admin User',
     email: 'admin@inventory.com',
     password: 'admin123',
+    phone: '+911111111111',
     role: 'admin',
+    isEmailVerified: true,
+    isPhoneVerified: true,
   });
 
   await User.create({
     name: 'Staff Member',
     email: 'staff@inventory.com',
     password: 'staff123',
+    phone: '+912222222222',
     role: 'staff',
+    isEmailVerified: true,
+    isPhoneVerified: true,
   });
 
   await Product.insertMany(products);
