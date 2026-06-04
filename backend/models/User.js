@@ -20,6 +20,10 @@ const userSchema = new mongoose.Schema(
     // Google OAuth
     googleId: { type: String, sparse: true, unique: true },
     authProvider: { type: String, enum: ['local', 'google'], default: 'local' },
+
+    // Team management
+    isActive: { type: Boolean, default: true },
+    invitedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   },
   { timestamps: true }
 );

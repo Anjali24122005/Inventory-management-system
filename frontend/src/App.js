@@ -12,10 +12,18 @@ import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
 import ActivityLog from './pages/ActivityLog';
 import Analytics from './pages/Analytics';
+import Team from './pages/Team';
 
 const PrivateRoute = ({ children }) => {
   const { user } = useAuth();
   return user ? children : <Navigate to="/login" replace />;
+};
+
+const AdminRoute = ({ children }) => {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.role !== 'admin') return <Navigate to="/" replace />;
+  return children;
 };
 
 const PublicRoute = ({ children }) => {
@@ -44,6 +52,7 @@ export default function App() {
               <Route path="products" element={<Products />} />
               <Route path="activity" element={<ActivityLog />} />
               <Route path="analytics" element={<Analytics />} />
+              <Route path="team" element={<AdminRoute><Team /></AdminRoute>} />
             </Route>
           </Routes>
         </BrowserRouter>

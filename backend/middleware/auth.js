@@ -7,9 +7,7 @@ const protect = async (req, res, next) => {
     token = req.headers.authorization.split(' ')[1];
   }
 
-  if (!token) {
-    return res.status(401).json({ message: 'Not authorized, no token' });
-  }
+  if (!token) return res.status(401).json({ message: 'Not authorized, no token' });
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -21,4 +19,11 @@ const protect = async (req, res, next) => {
   }
 };
 
-module.exports = { protect };
+// Admin only middleware
+const adminOnly = (req, res, next) => {
+  if (req.user?.role !== 'admin')
+    return res.status(403).json({ message: 'Admin access required' });
+  next();
+};
+
+module.exports = { protect, adminOnly };

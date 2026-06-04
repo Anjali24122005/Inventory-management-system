@@ -3,12 +3,12 @@ import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import NotificationBell from './NotificationBell';
-
 const navItems = [
   { to: '/', label: 'Dashboard', icon: '📊', end: true },
   { to: '/products', label: 'Products', icon: '📦' },
   { to: '/analytics', label: 'Analytics', icon: '📈' },
   { to: '/activity', label: 'Activity Log', icon: '🕐' },
+  { to: '/team', label: 'Team', icon: '👥', adminOnly: true },
 ];
 
 export default function Layout() {
@@ -43,7 +43,7 @@ export default function Layout() {
         </div>
 
         <nav className="flex-1 p-3 space-y-1">
-          {navItems.map((item) => (
+          {navItems.filter(item => !item.adminOnly || user?.role === 'admin').map((item) => (
             <NavLink
               key={item.to}
               to={item.to}

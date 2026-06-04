@@ -152,6 +152,9 @@ router.post('/login', [
     if (!user || !(await user.matchPassword(password)))
       return res.status(401).json({ message: 'Invalid credentials' });
 
+    if (user.isActive === false)
+      return res.status(403).json({ message: 'Your account has been deactivated. Contact admin.' });
+
     if (!user.isEmailVerified)
       return res.status(403).json({
         message: 'Please verify your email before logging in',

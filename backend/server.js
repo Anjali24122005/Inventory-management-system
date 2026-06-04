@@ -17,6 +17,7 @@ app.use('/api/products', require('./routes/products'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 app.use('/api/activity', require('./routes/activity'));
 app.use('/api/transactions', require('./routes/transactions'));
+app.use('/api/team', require('./routes/team'));
 
 // Error handling middleware
 app.use(require('./middleware/errorHandler'));
