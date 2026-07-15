@@ -13,6 +13,7 @@ import Products from './pages/Products';
 import ActivityLog from './pages/ActivityLog';
 import Analytics from './pages/Analytics';
 import Team from './pages/Team';
+import TransactionHistory from './pages/TransactionHistory';
 
 const PrivateRoute = ({ children }) => {
   const { user } = useAuth();
@@ -50,6 +51,7 @@ export default function App() {
             }>
               <Route index element={<Dashboard />} />
               <Route path="products" element={<Products />} />
+              <Route path="transactions" element={<TransactionHistory />} />
               <Route path="activity" element={<ActivityLog />} />
               <Route path="analytics" element={<Analytics />} />
               <Route path="team" element={<AdminRoute><Team /></AdminRoute>} />
